@@ -1,5 +1,5 @@
-var async = require('async');
 var _ = require('underscore');
+var async = require('async');
 var r = require('rethinkdb');
 var fs = require('fs');
 var parse = require('csv-parse');
@@ -20,7 +20,37 @@ module.exports = function(app){
     model.indexes = ['timestamp', 'symbol', {symbol_timestamp: ['symbol', 'timestamp']}];
 
     model.settings = {
-        fileEncoding: 'utf-8'
+        fileEncoding: 'utf-8',
+        parallelLimit: 100
+    }
+
+
+    /**
+        Required:
+            options.directory(directory path)
+    */
+    model.processDirectory = function(options, callbackIn){
+
+        var self = this;
+        var startTime = Date.now();
+        fs.readdir(options.directory, function(err, files){
+            if( err ){ return callbackIn(err); }
+            // async.eachSeries(files, function(file, callback){
+            async.eachLimit(files, self.settings.parallelLimit, function(file, callback){
+                var dotPosition = file.indexOf(".");
+                if( dotPosition === -1 ){ return callback(); }
+                var symbol = file.substring(0, dotPosition);
+// console.log('processing: ', symbol);
+                self.processFile({  file: options.directory + '/' + file,
+                                    symbol: symbol    },
+                                 callback );
+            }, function(err){
+                if( err ){ return callbackIn(err); }
+                console.log('Processed directory: ', options.directory);
+                console.log('Processing took ', (Date.now() - startTime) / 1000, ' seconds.');
+                return callbackIn(err);
+            });
+        })
     }
 
     /**

@@ -1,6 +1,8 @@
 var assert = require('assert');
 var async = require('async');
-var filePath = __dirname + '/data/aapl.us.txt';
+
+var filePath = __dirname + '/../data/1/aapl.us.txt';
+var dataDirectory = __dirname + '/../data/1';
 
 module.exports = function(app, callbackIn){
 
@@ -10,5 +12,8 @@ module.exports = function(app, callbackIn){
         function(callback){
             tick.processFile({file: filePath, symbol: 'aapl'}, callback);
         },
+        function(callback){
+            tick.processDirectory({directory: dataDirectory}, callback);
+        }
     ], callbackIn);
 }
